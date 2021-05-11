@@ -133,6 +133,23 @@ func (r *reminderBot) Message(msg *reddit.Message) error {
    return nil
 }
 
+func (r *reminderBot) Mention(mention *reddit.Message) error {
+    fmt.Printf("receive message from %s content %s \n", mention.Author, mention.Body)
+    fmt.Printf("mention subreddit %s mention post id %s mention subject %s \n", mention.Subreddit, mention.ParentID, mention.Subject)
+    sr := "/r/" + mention.Subreddit;
+    fmt.Printf("subreddit %s", sr)
+    harvest, err := r.bot.Listing(sr, mention.ParentID)
+    //r.bot.
+    if err != nil {
+      fmt.Println("Failed to fetch /r/TestMyBotTip: ", err)
+      return err
+    }
+    for _, post := range harvest.Posts {
+      fmt.Printf("[%s] posted [%s]\n", post.Author, post.Title)
+    }
+    return nil
+}
+
 func main() {
    if bot, err := reddit.NewBotFromAgentFile("reminderbot.agent", 10); err != nil {
        fmt.Println("Failed to create bot handle: ", err)
@@ -142,7 +159,7 @@ func main() {
        //if err != nil {
        //    fmt.Println("failed to send message ", err)
        //}
-       cfg := graw.Config{Subreddits: []string{"TestMyBotTip"}, Messages: true}
+       cfg := graw.Config{Subreddits: []string{"TestMyBotTip"}, Messages: true, Mentions: true}
        handler := &reminderBot{bot: bot}
        if _, wait, err := graw.Run(handler, bot, cfg); err != nil {
            fmt.Println("Failed to start graw run: ", err)
