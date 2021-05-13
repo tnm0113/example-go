@@ -76,95 +76,100 @@
 //
 //import (
 //    "fmt"
+//    "github.com/turnage/graw"
 //    "github.com/turnage/graw/reddit"
+//    "strings"
+//    "time"
 //)
-//
+
 //func main() {
-//   bot, err := reddit.NewBotFromAgentFile("reminderbot.agent", 0)
-//   if err != nil {
-//       fmt.Println("Failed to create bot handle: ", err)
-//       return
-//   }
+//     bot, err := reddit.NewBotFromAgentFile("reminderbot.agent", 0)
+//     if err != nil {
+//         fmt.Println("Failed to create bot handle: ", err)
+//         return
+//     }
 //
-//   harvest, err := bot.Listing("/r/TestMyBotTip", "")
-//   if err != nil {
-//       fmt.Println("Failed to fetch /r/TestMyBotTip: ", err)
-//       return
-//   }
+//     harvest, err := bot.Listing("/r/TestMyBotTip/comments/n9ssw8/adsadsa/", "")
+//     if err != nil {
+//         fmt.Println("Failed to fetch /r/TestMyBotTip: ", err)
+//         return
+//     }
 //
-//   for _, post := range harvest.Posts[:5] {
-//       fmt.Printf("[%s] posted [%s]\n", post.Author, post.Title)
-//   }
+//     for _, post := range harvest.Posts {
+//         fmt.Printf("[%s] posted [%s] conente [%s] id [%s]\n", post.Author, post.Title, post.SelfText, post.ID)
+//     }
 //}
 
 package main
 
 import (
-   "fmt"
-   "strings"
-   "time"
+ "fmt"
+ "strings"
+ "time"
 
-   "github.com/turnage/graw"
-   "github.com/turnage/graw/reddit"
+ "github.com/turnage/graw"
+ "github.com/turnage/graw/reddit"
 )
 
 type reminderBot struct {
-   bot reddit.Bot
+ bot reddit.Bot
 }
 
 func (r *reminderBot) Post(p *reddit.Post) error {
-   fmt.Printf("new post: %s, self text %s", p.Title, p.SelfText)
-    fmt.Println("remind bot")
-   if strings.Contains(p.SelfText, "remind me of this post") {
-       <-time.After(10 * time.Second)
-       fmt.Printf("remind: %s", p.Author)
-       fmt.Println("send msg")
-       return r.bot.SendMessage(
-           p.Author,
-           fmt.Sprintf("Reminder: %s", p.Title),
-           "You've been reminded!",
-       )
-   }
-   return nil
+ fmt.Printf("new post: %s, self text %s", p.Title, p.SelfText)
+  fmt.Println("remind bot")
+ if strings.Contains(p.SelfText, "remind me of this post") {
+     <-time.After(10 * time.Second)
+     fmt.Printf("remind: %s", p.Author)
+     fmt.Println("send msg")
+     return r.bot.SendMessage(
+         p.Author,
+         fmt.Sprintf("Reminder: %s", p.Title),
+         "You've been reminded!",
+     )
+ }
+ return nil
 }
 
 func (r *reminderBot) Message(msg *reddit.Message) error {
-   fmt.Printf("receive message from %s content %s", msg.Author, msg.Body)
-   return nil
+ fmt.Printf("receive message from %s content %s", msg.Author, msg.Body)
+ return nil
 }
 
 func (r *reminderBot) Mention(mention *reddit.Message) error {
-    fmt.Printf("receive message from %s content %s \n", mention.Author, mention.Body)
-    fmt.Printf("mention subreddit %s mention post id %s mention subject %s \n", mention.Subreddit, mention.ParentID, mention.Subject)
-    sr := "/r/" + mention.Subreddit;
-    fmt.Printf("subreddit %s", sr)
-    harvest, err := r.bot.Listing(sr, mention.ParentID)
-    //r.bot.
-    if err != nil {
-      fmt.Println("Failed to fetch /r/TestMyBotTip: ", err)
-      return err
-    }
-    for _, post := range harvest.Posts {
-      fmt.Printf("[%s] posted [%s]\n", post.Author, post.Title)
-    }
-    return nil
+  fmt.Printf("receive mention from %s content %s link title %s\n", mention.Author, mention.Body, mention.LinkTitle)
+  fmt.Printf("mention subreddit %s mention parent id %s mention subject %s \n", mention.Subreddit, mention.ParentID, mention.Subject)
+  parentId := strings.Split(mention.ParentID, "_")[1]
+  sr := "/r/" + mention.Subreddit + "/comments/" + parentId + "/" + mention.LinkTitle;
+  fmt.Printf("subreddit %s \n", sr)
+  harvest, err := r.bot.Listing(sr, "")
+
+  if err != nil {
+    fmt.Println("Failed to fetch /r/TestMyBotTip: ", err)
+    return err
+  }
+  fmt.Printf("harvets %v \n", harvest)
+  for _, post := range harvest.Posts {
+    fmt.Printf("[%s] posted [%s]\n", post.Author, post.Title)
+  }
+  return nil
 }
 
 func main() {
-   if bot, err := reddit.NewBotFromAgentFile("reminderbot.agent", 10); err != nil {
-       fmt.Println("Failed to create bot handle: ", err)
-   } else {
-       fmt.Println("start bot")
-       //err = bot.SendMessage("tnm_tip_bot", "aaaaa", "asddsadas")
-       //if err != nil {
-       //    fmt.Println("failed to send message ", err)
-       //}
-       cfg := graw.Config{Subreddits: []string{"TestMyBotTip"}, Messages: true, Mentions: true}
-       handler := &reminderBot{bot: bot}
-       if _, wait, err := graw.Run(handler, bot, cfg); err != nil {
-           fmt.Println("Failed to start graw run: ", err)
-       } else {
-           fmt.Println("graw run failed: ", wait())
-       }
-   }
+ if bot, err := reddit.NewBotFromAgentFile("reminderbot.agent", 10); err != nil {
+     fmt.Println("Failed to create bot handle: ", err)
+ } else {
+     fmt.Println("start bot")
+     //err = bot.SendMessage("tnm_tip_bot", "aaaaa", "asddsadas")
+     //if err != nil {
+     //    fmt.Println("failed to send message ", err)
+     //}
+     cfg := graw.Config{Subreddits: []string{"TestMyBotTip"}, Messages: true, Mentions: true}
+     handler := &reminderBot{bot: bot}
+     if _, wait, err := graw.Run(handler, bot, cfg); err != nil {
+         fmt.Println("Failed to start graw run: ", err)
+     } else {
+         fmt.Println("graw run failed: ", wait())
+     }
+ }
 }
