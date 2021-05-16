@@ -76,28 +76,45 @@ package main
 
 import (
    "fmt"
-   "github.com/turnage/graw/reddit"
+   "github.com/harmony-one/go-sdk/pkg/account"
+
+   "github.com/harmony-one/go-sdk/pkg/mnemonic"
 )
 
 func main() {
-   bot, err := reddit.NewBotFromAgentFile("reminderbot.agent", 0)
-   if err != nil {
-       fmt.Println("Failed to create bot handle: ", err)
-       return
+   //bot, err := reddit.NewBotFromAgentFile("reminderbot.agent", 0)
+   //if err != nil {
+   //   fmt.Println("Failed to create bot handle: ", err)
+   //   return
+   //}
+   //
+   //harvest, err := bot.ListingWithParams("/api/info.json", map[string]string{"id": "t1_gxpmkx8"})
+   //if err != nil {
+   //    fmt.Println("Failed to fetch /r/TestMyBotTip: ", err)
+   //    return
+   //}
+   // fmt.Printf("harvets %v \n", harvest)
+   //for _, post := range harvest.Posts {
+   //    fmt.Printf("[%s] posted [%s] link [%s] id [%s]\n", post.Author, post.Title, post.URL, post.ID)
+   //}
+   // for _, post := range harvest.Comments {
+   //     fmt.Printf("[%s] posted [%s] link [%s] id [%s]\n", post.Author, post.Body, post.Name, post.ID)
+   // }
+   mn := mnemonic.Generate()
+   fmt.Printf("mnemonic %s \n", mn)
+   acc := account.Creation{
+     Name: "test",
+     Passphrase: "",
+     Mnemonic: mn,
+     HdAccountNumber: nil,
+     HdIndexNumber: nil,
    }
 
-   harvest, err := bot.ListingWithParams("/api/info.json", map[string]string{"id": "t1_gxpmkx8"})
+   err := account.CreateNewLocalAccount(&acc)
+
    if err != nil {
-       fmt.Println("Failed to fetch /r/TestMyBotTip: ", err)
-       return
+     fmt.Println("Create account error")
    }
-    fmt.Printf("harvets %v \n", harvest)
-   for _, post := range harvest.Posts {
-       fmt.Printf("[%s] posted [%s] link [%s] id [%s]\n", post.Author, post.Title, post.URL, post.ID)
-   }
-    for _, post := range harvest.Comments {
-        fmt.Printf("[%s] posted [%s] link [%s] id [%s]\n", post.Author, post.Body, post.Name, post.ID)
-    }
 }
 
 //package main
